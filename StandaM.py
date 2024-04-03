@@ -1,3 +1,11 @@
+'''
+Motors:
+    Move a given number of steps                            DONE
+    Set current position to zero                            DONE
+    Get current position                                    DONE
+
+'''
+# ref: https://files.xisupport.com/other_files/JupyterNotebook/Standa_8SMC5_USB_Python_tutorial.html
 import pathlib
 import os
 import time
@@ -21,7 +29,7 @@ class StandaM(Device):
     host = device_property(dtype=str, default_value="localhost")
     port = class_property(dtype=int, default_value=10000)
     #@command(dtype_in=float, dtype_out=str)
-    cmd_list = { 'move_calibrat' : [  [float , "Number" ], [ str, "Number * 2" ] ] }
+    #cmd_list = { 'move_calibrat' : [  [float , "Number" ], [ str, "Number * 2" ] ] }
 
     def init_device(self):
         super().init_device()
@@ -39,23 +47,23 @@ class StandaM(Device):
         self.set_status("Standa Motor is ON")
         self.info_stream("\r Standa Motor is ON \r")
 
-    current = attribute(
-        label="Current",
-        dtype=float,
-        display_level=DispLevel.EXPERT,
-        access=AttrWriteType.READ_WRITE,
-        unit="A",
-        format="8.4f",
-        min_value=0.0,
-        max_value=8.5,
-        min_alarm=0.1,
-        max_alarm=8.4,
-        min_warning=0.5,
-        max_warning=8.0,
-        fget="get_current",
-        fset="set_current",
-        doc="the power supply current",
-    )
+    # current = attribute(
+    #     label="Current",
+    #     dtype=float,
+    #     display_level=DispLevel.EXPERT,
+    #     access=AttrWriteType.READ_WRITE,
+    #     unit="A",
+    #     format="8.4f",
+    #     min_value=0.0,
+    #     max_value=8.5,
+    #     min_alarm=0.1,
+    #     max_alarm=8.4,
+    #     min_warning=0.5,
+    #     max_warning=8.0,
+    #     fget="get_current",
+    #     fset="set_current",
+    #     doc="the power supply current",
+    # )
 
 
     device_uri = attribute(
@@ -64,16 +72,16 @@ class StandaM(Device):
         fget="get_divece",
     )
     
-    @attribute
-    def voltage(self):
-        return 10.0
+    # @attribute
+    # def voltage(self):
+    #     return 10.0
 
-    def get_current(self):
-        return self._my_current
+    # def get_current(self):
+    #     return self._my_current
 
-    def set_current(self, current):
-        print("Current set to %f" % current)
-        self._my_current = current
+    # def set_current(self, current):
+    #     print("Current set to %f" % current)
+    #     self._my_current = current
 
     # Standa
     def get_divece(self):
@@ -132,7 +140,14 @@ class StandaM(Device):
             return self.close_connection()
         else:
             return state + "not define"
-        
+ 
+#____________ Get current position  __________________  
+    @command(dtype_out=str)
+    def get_position(self):
+        position = self._axis.get_position()
+        return str(position)
+
+#____________ Set current position to zero __________________
     @command(dtype_out=str)
     def set_zero(self):
         self._axis.command_zero()
@@ -188,7 +203,7 @@ class StandaM(Device):
         return "Current position: "+ str(position_calb.Position) +" mm"
     
     @command(dtype_in=float, dtype_out=str)
-    def  move_calibrat(self,next_position_in_mm):
+    def move_calibrat(self,next_position_in_mm):
         # ==== Perform a shift by using user units (mm in our case) ====
         position_calb = self._axis.get_position_calb()
         print("Current position:", position_calb.Position, "mm")
@@ -201,74 +216,39 @@ class StandaM(Device):
 
         position_calb = self._axis.get_position_calb()
         return "Current position:" +str(position_calb.Position) + " mm"
-    # @command(dtype_in=str, dtype_out=str)    
-    # def get_foto(self, name):
-    #     with TLCameraSDK() as sdk:
-    #         available_cameras = sdk.discover_available_cameras()
-    #         with sdk.open_camera(available_cameras[0]) as camera:
-    #             camera.exposure_time_us = 10000  # set exposure to 11 ms
-    #             camera.frames_per_trigger_zero_for_unlimited = 0  # start camera in continuous mode
-    #             camera.image_poll_timeout_ms = 1000  # 1 second polling timeout
-        
-    #             camera.arm(2)
-        
-    #             camera.issue_software_trigger()
-        
-    #             frame = camera.get_pending_frame_or_null()
-    #             if frame is not None:
-    #                 print("frame #{} received!".format(frame.frame_count))
-    #                 frame.image_buffer
-    #                 image_buffer_copy = np.copy(frame.image_buffer)
-    #                 numpy_shaped_image = image_buffer_copy.reshape(camera.image_height_pixels, camera.image_width_pixels)
-    #                 nd_image_array = np.full((camera.image_height_pixels, camera.image_width_pixels, 3), 0, dtype=np.uint8)
-    #                 nd_image_array[:,:,0] = numpy_shaped_image
-    #                 nd_image_array[:,:,1] = numpy_shaped_image
-    #                 nd_image_array[:,:,2] = numpy_shaped_image
-    #                 if name == "":
-    #                     filename="tango_works.jpg"
-    #                 else:
-    #                     filename=name
-    #                 cv2.imwrite(filename,nd_image_array)
-    #                 #cv2.imshow("Image From TSI Cam", nd_image_array)
-    #             else:
-    #                 print("Unable to acquire image, program exiting...")
-    #                 exit()
-                    
-    #             cv2.waitKey(0)
-    #             camera.disarm()
-				
-    #         return str(os.path.abspath(os.getcwd()))+"\\" + filename + was taken"
 
-    range = attribute(label="Range", dtype=float)
 
-    @range.setter
-    def range(self, new_range):
-        self._my_range = new_range
 
-    @range.getter
-    def current_range(self):
-        return self._my_range, time(), AttrQuality.ATTR_WARNING
+    # range = attribute(label="Range", dtype=float)
 
-    @range.is_allowed
-    def can_range_be_changed(self, req_type):
-        if req_type == AttReqType.WRITE_REQ:
-            return not self._output_on
-        return True
+    # @range.setter
+    # def range(self, new_range):
+    #     self._my_range = new_range
 
-    compliance = attribute(label="Compliance", dtype=float)
+    # @range.getter
+    # def current_range(self):
+    #     return self._my_range, time(), AttrQuality.ATTR_WARNING
 
-    @compliance.read
-    def compliance(self):
-        return self._my_compliance
+    # @range.is_allowed
+    # def can_range_be_changed(self, req_type):
+    #     if req_type == AttReqType.WRITE_REQ:
+    #         return not self._output_on
+    #     return True
 
-    @compliance.write
-    def new_compliance(self, new_compliance):
-        self._my_compliance = new_compliance
+    # compliance = attribute(label="Compliance", dtype=float)
 
-    @command(dtype_in=bool, dtype_out=bool)
-    def output_on_off(self, on_off):
-        self._output_on = on_off
-        return self._output_on
+    # @compliance.read
+    # def compliance(self):
+    #     return self._my_compliance
+
+    # @compliance.write
+    # def new_compliance(self, new_compliance):
+    #     self._my_compliance = new_compliance
+
+    # @command(dtype_in=bool, dtype_out=bool)
+    # def output_on_off(self, on_off):
+    #     self._output_on = on_off
+    #     return self._output_on
         
 if __name__ == "__main__":
     StandaM.run_server()
