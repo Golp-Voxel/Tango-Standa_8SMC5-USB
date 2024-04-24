@@ -15,7 +15,13 @@ from tango import AttrQuality, AttrWriteType, DevState, DispLevel, AttReqType, D
 from tango.server import Device, attribute, command
 from tango.server import class_property, device_property
 
-
+db = Database()
+try:
+   prop = db.get_property('ORBendPoint', 'Pool/' + instance_name)
+   orb_end_point = prop['Pool/' + instance_name][0]
+   os.environ["ORBendPoint"] = orb_end_point
+except:
+   pass
 
 class StandaM(Device):
     _my_current = 2.3456
