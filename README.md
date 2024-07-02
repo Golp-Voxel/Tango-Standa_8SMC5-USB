@@ -17,7 +17,7 @@
 ### GetListDiveces
 
 ```python
-GetListDiveces()
+GetListDevices()
 ```
 
 ### SetDevice
