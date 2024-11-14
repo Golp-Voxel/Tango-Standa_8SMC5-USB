@@ -15,21 +15,10 @@ from tango import AttrQuality, AttrWriteType, DevState, DispLevel, AttReqType, D
 from tango.server import Device, attribute, command
 from tango.server import class_property, device_property
 
-db = Database()
-try:
-   prop = db.get_property('ORBendPoint', 'Pool/' + instance_name)
-   orb_end_point = prop['Pool/' + instance_name][0]
-   os.environ["ORBendPoint"] = orb_end_point
-except:
-   pass
 
 class StandaM(Device):
-    _my_current = 2.3456
-    _my_range = 0.0
-    _my_compliance = 0.0
-    _output_on = False
     _available_cameras = ""
-    _device_uri="Rossa"
+    _device_uri=""
     _axis = ""
 
     host = device_property(dtype=str, default_value="localhost")
@@ -53,48 +42,17 @@ class StandaM(Device):
         self.set_status("Standa Motor is ON")
         self.info_stream("\r Standa Motor is ON \r")
 
-    # current = attribute(
-    #     label="Current",
-    #     dtype=float,
-    #     display_level=DispLevel.EXPERT,
-    #     access=AttrWriteType.READ_WRITE,
-    #     unit="A",
-    #     format="8.4f",
-    #     min_value=0.0,
-    #     max_value=8.5,
-    #     min_alarm=0.1,
-    #     max_alarm=8.4,
-    #     min_warning=0.5,
-    #     max_warning=8.0,
-    #     fget="get_current",
-    #     fset="set_current",
-    #     doc="the power supply current",
-    # )
+    def delete_device(self):
+        return
 
-
-    device_uri = attribute(
-        label="Device that is going to be use",
-        dtype=str,
-        fget="get_divece",
-    )
     
-    # @attribute
-    # def voltage(self):
-    #     return 10.0
-
-    # def get_current(self):
-    #     return self._my_current
-
-    # def set_current(self, current):
-    #     print("Current set to %f" % current)
-    #     self._my_current = current
 
     # Standa
-    def get_divece(self):
+    def GetDivece(self):
         return self._device_uri
     
     @command(dtype_out=str)
-    def get_list_diveces(self):
+    def GetListDevices(self):
         report = ""
         devices = ximc.enumerate_devices(ximc.EnumerateFlags.ENUMERATE_NETWORK | ximc.EnumerateFlags.ENUMERATE_PROBE)
         if len(devices) == 0:
@@ -107,19 +65,22 @@ class StandaM(Device):
         return "Dice found: "+report
 	
     @command(dtype_in=str, dtype_out=str)    
-    def set_device(self, device):
+    def SetDevice(self, device):
         self._device_uri = r"xi-com:\\.\COM"+str(device)
         return "it was selected the device "+device
     
     @command( dtype_out=str)    
-    def set_device_as_virtual(self):
+    def SetDeviceAsVirtual(self):
         virtual_device_filename = "virtual_motor_controller_1.bin"
         virtual_device_file_path = os.path.join(pathlib.Path().cwd(), virtual_device_filename)
         self._device_uri = "xi-emu:///{}".format(virtual_device_file_path)
         return "it was selected the device "+self._device_uri
     
-    
-    def open_connection(self):
+
+
+        
+    @command( dtype_out=str)
+    def ConnectMotor(self):
         try:
             self._axis = ximc.Axis(self._device_uri)
             # To open the connection, you must manually call `open_device()` method
@@ -128,8 +89,9 @@ class StandaM(Device):
         except:
             self.info_stream("Problem on open_connection")
             return "Problem on open_connection"
-        
-    def close_connection(self):
+    
+    @command( dtype_out=str)
+    def DisconnectMotor(self):
         try:
             self._axis.close_device()
             print("Device disconnected")
@@ -137,31 +99,22 @@ class StandaM(Device):
         except:
             self.info_stream("Problem on close_connection")
             return "Problem on close_connection"
-        
-    @command(dtype_in=str, dtype_out=str)
-    def connection(self,state):
-        if state == "open":
-           return self.open_connection()
-        elif state == "close":
-            return self.close_connection()
-        else:
-            return state + "not define"
  
 #____________ Get current position  __________________  
     @command(dtype_out=str)
-    def get_position(self):
+    def GetPosition(self):
         position = self._axis.get_position()
         return str(position)
 
 #____________ Set current position to zero __________________
     @command(dtype_out=str)
-    def set_zero(self):
+    def SetZero(self):
         self._axis.command_zero()
         return "Current position is set as zero"
     
 #____________ Absolute movement to the position __________________
     @command(dtype_in=int,dtype_out=str)
-    def move_to(self,next_position):
+    def MoveTo(self,next_position):
         # get_position method returns position_t object
         position = self._axis.get_position()
         self.info_stream("Initial position:"+ str(position.Position))
@@ -176,7 +129,7 @@ class StandaM(Device):
     
 #____________ Relative movement to the position __________________    
     @command(dtype_in=int, dtype_out=str)
-    def relative_shift(self,relative_shift):
+    def RelativeShift(self,relative_shift):
         print("Perform a relative shift by", relative_shift)
         print("So we are going to", position.Position, "+", relative_shift, " =", position.Position + relative_shift)
         self._axis.command_movr(relative_shift, 0)
@@ -191,7 +144,7 @@ class StandaM(Device):
     
 #____________ Movement Using user units __________________
     @command(dtype_in=float, dtype_out=str)
-    def set_user_unit(self,unit_coef):
+    def SetUserUnit(self,unit_coef):
         # ==== User unit setup ====
         # We will use mm as user units
         # In our example conversion coefficient will be 0.0025 mm / step.
@@ -206,10 +159,10 @@ class StandaM(Device):
 
         # ==== Perform a shift by using user units (mm in our case) ====
         position_calb = self._axis.get_position_calb()
-        return "Current position: "+ str(position_calb.Position) +" mm"
+        return "Unit was set as: "+ str(position_calb.Position) +" mm / step"
     
     @command(dtype_in=float, dtype_out=str)
-    def move_calibrat(self,next_position_in_mm):
+    def MoveCalibrate(self,next_position_in_mm):
         # ==== Perform a shift by using user units (mm in our case) ====
         position_calb = self._axis.get_position_calb()
         print("Current position:", position_calb.Position, "mm")
@@ -221,40 +174,8 @@ class StandaM(Device):
         self._axis.command_wait_for_stop(100)
 
         position_calb = self._axis.get_position_calb()
-        return "Current position:" +str(position_calb.Position) + " mm"
+        return "Perform a shift: " +str(position_calb.Position) + " mm"
 
-
-
-    # range = attribute(label="Range", dtype=float)
-
-    # @range.setter
-    # def range(self, new_range):
-    #     self._my_range = new_range
-
-    # @range.getter
-    # def current_range(self):
-    #     return self._my_range, time(), AttrQuality.ATTR_WARNING
-
-    # @range.is_allowed
-    # def can_range_be_changed(self, req_type):
-    #     if req_type == AttReqType.WRITE_REQ:
-    #         return not self._output_on
-    #     return True
-
-    # compliance = attribute(label="Compliance", dtype=float)
-
-    # @compliance.read
-    # def compliance(self):
-    #     return self._my_compliance
-
-    # @compliance.write
-    # def new_compliance(self, new_compliance):
-    #     self._my_compliance = new_compliance
-
-    # @command(dtype_in=bool, dtype_out=bool)
-    # def output_on_off(self, on_off):
-    #     self._output_on = on_off
-    #     return self._output_on
         
 if __name__ == "__main__":
     StandaM.run_server()
