@@ -80,3 +80,4 @@ widgetsnbextension==4.0.9
 wrapt==1.16.0
 xarray==2023.10.1
 zipp==3.17.0
+libximc
