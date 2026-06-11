@@ -3,7 +3,7 @@
 This repository contains the driver for controlling a Standa 8SMC5-USB Controller with the Tango Control. After cloning this repository with the following command
 
 ```
-git clone https://github.com/Golp-Voxel/Tango_Standa_8SMC5-USB.git
+git clone https://github.com/Golp-Voxel/Tango-Standa_8SMC5-USB.git
 ```
 
 It is necessary to create the `tango-env` using the following command:
@@ -24,8 +24,9 @@ To complete the installation, it is necessary to copy the `StandaM.bat` template
 
 After installing the Tango Device server, that can detect and connect to a Standa Controller 8SMC5-USB, being able to move the motors connect to the it.
 
-- [GetListDiveces](#GetListDiveces)
+- [GetListDevices](#GetListDevices)
 - [SetDevice](#SetDevice)
+- [SetDeviceAsVirtual](#SetDeviceAsVirtual)
 - [ConnectMotor](#ConnectMotor)
 - [DisconnectMotor](#DisconnectMotor)
 - [GetPosition](#GetPosition)
@@ -35,9 +36,9 @@ After installing the Tango Device server, that can detect and connect to a Stand
 - [SetUserUnit](#SetUserUnit)
 - [MoveCalibrate](#MoveCalibrate)
 
-### GetListDiveces
+### GetListDevices
 
-Lists the diveces connected to the PC.
+Lists the devices connected to the PC.
 
 ```python
 GetListDevices()
@@ -45,18 +46,26 @@ GetListDevices()
 
 ### SetDevice
 
-The command recives the SerialCOM number of the device(`int`) to be connected. 
+The command recives the SerialCOM number of the device (string, e.g. `"3"` for `COM3`) to be connected. 
 
 ```python
 SetDevice(device)
 ```
 
-### ConnectMotor
+### SetDeviceAsVirtual
 
-Connect the Device that was set using the function `SetDevice(device)`.
+Selects a virtual motor controller (`virtual_motor_controller_1.bin` in the repo folder) instead of a real device. Useful to test the device server without hardware.
 
 ```python
-ConnectDevice()
+SetDeviceAsVirtual()
+```
+
+### ConnectMotor
+
+Connect the Device that was set using the function `SetDevice(device)` or `SetDeviceAsVirtual()`.
+
+```python
+ConnectMotor()
 ```
 
 ### DisconnectMotor
@@ -124,6 +133,31 @@ MoveCalibrate(next_position_in_mm)
 
 ```python
 import tango
+
+Standa_Motor = tango.DeviceProxy(<Standa_Tango_location_on_the_database>)
+print(Standa_Motor.state())
+
+# List the controllers connected to the PC
+print(Standa_Motor.GetListDevices())
+
+# Select the device on COM3 and connect to it
+# (use Standa_Motor.SetDeviceAsVirtual() to test without hardware)
+Standa_Motor.SetDevice("3")
+print(Standa_Motor.ConnectMotor())
+
+# Set the current position as the origin
+Standa_Motor.SetZero()
+
+# Move 200 steps and read back the position
+print(Standa_Motor.RelativeShift(200))
+print(Standa_Motor.GetPosition())
+
+# Use user units (e.g. 0.0025 mm / step) and move to 1.5 mm
+Standa_Motor.SetUserUnit(0.0025)
+print(Standa_Motor.MoveCalibrate(1.5))
+
+# Disconnect the motor at the end of the session
+Standa_Motor.DisconnectMotor()
 ```
 
 
